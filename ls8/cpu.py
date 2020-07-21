@@ -1,21 +1,24 @@
 """CPU functionality."""
-
 import sys
 
 class CPU:
-    """Main CPU class."""
-
     def __init__(self):
         """Construct a new CPU."""
 
-        # register holds storage via a list
+        # register holds 8 bytes
         self.reg = [0] * 8
         self.ram = [0] * 256
+        # Program Counter, index into ram 
         self.pc =  0
         self.running = False
+        # Load binary
         self.LDI = 0b10000010
+        # Print binary
         self.PRN = 0b01000111
+        # Halt binary
         self.HLT = 0b00000001
+        # Multiply binary
+        self.MUL = 0b10100010
 
     #  accept the address to read and return the value stored there
     def ram_read(self, index):
@@ -27,25 +30,26 @@ class CPU:
 
     def load(self):
         """Load a program into memory."""
-
+        
         # At address 0...(memory controller accesses RAM via address)
         address = 0
 
-        # For now, we've just hardcoded a program: 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8 -> call LDI with params R0 and 8 (ADDRESS: 0)
-            0b00000000,     # R0    (ADDRESS: 1)
-            0b00001000,     # binary value of 8  (ADDRESS: 2)
-            0b01000111, # PRN R0 -> call PRN with param R0 (ADDRESS: 3)
-            0b00000000,     # R0 (ADDRESS: 4)
-            0b00000001, # HLT -> Halt (ADDRESS: 5)
-        ]
-
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
-
+        if len(sys.argv) != 2:
+            print("usage: cpu.py ")
+            sys.exit(1)
+        try:
+            with open(sys.argv[1]) as filename:
+                for line in filename:
+                    try:
+                        line = line.split("#",1)[0]
+                        line = int(line, 10)  # int() is base 10 by default
+                        self.ram[address] = line
+                        address += 1
+                    except ValueError:
+                        pass
+        except FileNotFoundError:
+            print(f"Couldn't find file {sys.argv[1]}")
+        
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
@@ -53,6 +57,11 @@ class CPU:
             self.reg[reg_a] += self.reg[reg_b]
         #elif op == "SUB": etc
         else:
+            raise Exception("Unsupported ALU operation")
+
+        if op == self.MUL:
+            self.reg[reg_a] *= self.reg[reg_b]
+        else: 
             raise Exception("Unsupported ALU operation")
 
     def trace(self):
@@ -82,8 +91,8 @@ class CPU:
             ir = self.ram[self.pc]
 
             if ir == self.LDI:  # -- > LDI R0, 8
-                reg_num = self.ram[self.pc+1] # R0 = register 0
-                value = self.ram[self.pc+2] # 8
+                reg_num = self.ram_read[self.pc+1] # R0 = register 0
+                value = self.ram_read[self.pc+2] # 8
                 self.reg[reg_num] = value
                 self.pc += 3
 
@@ -98,5 +107,5 @@ class CPU:
             
             # else instruction not understood
             else:
-                print(f"Did not understand that instruction: {ir} and address {self.pc}")
+                print(f"Did not understand that instruction: {ir} at address {self.pc}")
                 sys.exit(1)
