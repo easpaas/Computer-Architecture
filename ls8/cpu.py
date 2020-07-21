@@ -10,12 +10,20 @@ class CPU:
 
         # register holds storage via a list
         self.reg = [0] * 8
-        self.pc =  0
         self.ram = [0] * 256
+        self.pc =  0
         self.running = False
         self.LDI = 0b10000010
         self.PRN = 0b01000111
         self.HLT = 0b00000001
+
+    #  accept the address to read and return the value stored there
+    def ram_read(self, index):
+        return self.ram[index]
+
+    # accept a value to write, and the address to write it to 
+    def ram_write(self, index, value):
+        self.ram[index] = value
 
     def load(self):
         """Load a program into memory."""
@@ -37,20 +45,6 @@ class CPU:
         for instruction in program:
             self.ram[address] = instruction
             address += 1
-
-            # if instruction == 0b10000010:  # -- > LDI R0, 8
-                # 
-                # increase address pointer by 1 
-                # address += 1
-                
-
-
-            # if instruction == 0b01000111:
-                # increase address pointer by 1 
-                # address += 1
-                # print value of R0
-                # print(f"instruction: {instruction}")
-
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -81,8 +75,28 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        # TODO
-            # 
-            #  
-            #
-        pass
+        self.running = True
+        
+        while self.running:
+            # IR instruction register, equal to current address in memory
+            ir = self.ram[self.pc]
+
+            if ir == self.LDI:  # -- > LDI R0, 8
+                reg_num = self.ram[self.pc+1] # R0 = register 0
+                value = self.ram[self.pc+2] # 8
+                self.reg[reg_num] = value
+                self.pc += 3
+
+            elif ir == self.PRN:
+                reg_num = self.ram[self.pc+1]
+                print(self.reg[reg_num])
+                self.pc += 2
+
+            elif ir == self.HLT:
+                self.running = False
+                self.pc += 1
+            
+            # else instruction not understood
+            else:
+                print(f"Did not understand that instruction: {ir} and address {self.pc}")
+                sys.exit(1)
