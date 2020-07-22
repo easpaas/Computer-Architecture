@@ -25,9 +25,18 @@ class CPU:
         self.POP = 0b01000110
         # Stack pointer starts at F4
         self.SP = 0xF4
+        # Dispatch Table
+        self.configure_dispatch_table()
 
-    #   
+    def configure_dispatch_table(self):
+        self.dispatch_table = {}
 
+        self.dispatch_table[self.LDI] = self.ldi
+        self.dispatch_table[self.PRN] = self.prn
+        self.dispatch_table[self.HLT] = self.hlt
+        self.dispatch_table[self.PUSH] = self.push
+        self.dispatch_table[self.POP] = self.pop
+        
     #  accept the address to read and return the value stored there
     def ram_read(self, index):
         return self.ram[index]
