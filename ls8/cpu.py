@@ -19,6 +19,14 @@ class CPU:
         self.HLT = 0b00000001
         # Multiply binary
         self.MUL = 0b10100010
+        # PUSH binary
+        self.PUSH = 0b01000101
+        # POP binary
+        self.POP = 0b01000110
+        # Stack pointer starts at F4
+        self.SP = 0xF4
+
+    #   
 
     #  accept the address to read and return the value stored there
     def ram_read(self, index):
@@ -27,6 +35,23 @@ class CPU:
     # accept a value to write, and the address to write it to 
     def ram_write(self, index, value):
         self.ram[index] = value
+
+    def hlt(self):
+        sys.exit()
+
+    def ldi(self, a, value):
+        self.reg[a] = value
+
+    def pop(self, a):
+        self.reg[a] = self.ram_read(self.SP)
+        self.SP += 1
+
+    def prn(self, a):
+        print(self.reg[a])
+
+    def push(self, a):
+        self.SP -= 1
+        self.ram_write(self.SP, self.reg[a])
 
     def load(self):
         """Load a program into memory."""
@@ -82,6 +107,7 @@ class CPU:
         for i in range(8):
             print(" %02X" % self.reg[i], end='')
 
+
     def run(self):
         """Run the CPU."""
         self.running = True
@@ -90,9 +116,9 @@ class CPU:
             # IR instruction register, equal to current address in memory
             ir = self.ram[self.pc]
 
-            if ir == self.LDI:  # -- > LDI R0, 8
-                reg_num = self.ram_read[self.pc+1] # R0 = register 0
-                value = self.ram_read[self.pc+2] # 8
+            if ir == self.LDI:  
+                reg_num = self.ram_read(self.pc+1)
+                value = self.ram_read(self.pc+2)
                 self.reg[reg_num] = value
                 self.pc += 3
 
@@ -104,8 +130,35 @@ class CPU:
             elif ir == self.HLT:
                 self.running = False
                 self.pc += 1
-            
-            # else instruction not understood
+
+            elif ir == self.PUSH: 
+                # decrement stack pointer
+                self.reg[self.SP] -= 1
+                self.reg[self.SP] &= 0xff  # keep R7 in the range 00-FF
+
+                # get register value
+                reg_num = self.ram[self.pc + 1]
+                value = self.reg[reg_num]
+
+                # Store in memory
+                address_to_push_to = self.reg[self.SP]
+                self.ram[address_to_push_to] = value
+                
+                self.pc += 2
+
+            elif ir == self.POP:  
+                # Get value from RAM
+                address_to_pop_from = self.reg[self.SP]
+                value = self.ram[address_to_pop_from]
+
+                # Store in the given register
+                reg_num = self.ram[self.pc + 1]
+                self.reg[reg_num] = value
+
+                # Increment SP
+                self.reg[self.SP] += 1
+
+                self.pc += 2
             else:
                 print(f"Did not understand that instruction: {ir} at address {self.pc}")
                 sys.exit(1)
