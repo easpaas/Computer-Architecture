@@ -11,20 +11,26 @@ class CPU:
         # Program Counter, index into ram 
         self.pc =  0
         self.running = False
+        #  Add binary
+        self.ADD = 10100000
         # Load binary
-        self.LDI = 0b10000010
+        self.LDI = 10000010
         # Print binary
         self.PRN = 0b01000111
         # Halt binary
         self.HLT = 0b00000001
         # Multiply binary
-        self.MUL = 0b10100010
+        self.MUL = 10100010
         # PUSH binary
         self.PUSH = 0b01000101
         # POP binary
         self.POP = 0b01000110
         # Stack pointer starts at F4
-        self.SP = 0xF4
+        self.SP = 0xf4
+        # CALL binary
+        self.CALL = 0b01010000
+        # RET binary
+        self.RET = 0b00010001
         # Dispatch Table
         self.configure_dispatch_table()
 
@@ -87,13 +93,10 @@ class CPU:
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
-        if op == "ADD":
+        if op == self.ADD:
             self.reg[reg_a] += self.reg[reg_b]
         #elif op == "SUB": etc
-        else:
-            raise Exception("Unsupported ALU operation")
-
-        if op == self.MUL:
+        elif op == self.MUL:
             self.reg[reg_a] *= self.reg[reg_b]
         else: 
             raise Exception("Unsupported ALU operation")
@@ -124,6 +127,7 @@ class CPU:
         while self.running:
             # IR instruction register, equal to current address in memory
             ir = self.ram[self.pc]
+            print(f'current instruction: {ir}')
 
             if ir == self.LDI:  
                 reg_num = self.ram_read(self.pc+1)
@@ -168,6 +172,32 @@ class CPU:
                 self.reg[self.SP] += 1
 
                 self.pc += 2
+
+            elif ir == self.CALL:
+                # Get address of the next instruction
+                return_addr = pc + 2
+
+                # Push that on the stack
+                self.reg[self.SP] -= 1
+                address_to_push_to = self.reg[self.SP]
+                self.ram[address_to_push_to] = return_addr
+
+                # Set the PC to the subroutine address
+                reg_num = self.ram[pc + 1]
+                subroutine_addr = self.reg[reg_num]
+
+                pc = subroutine_addr
+
+            elif ir == self.RET:
+                # Get return address from the top of the stack
+                address_to_pop_from = self.reg[self.SP]
+                return_addr = self.ram[address_to_pop_from]
+                self.reg[self.SP] += 1
+
+                # Set the PC to the return address
+                pc = return_addr
+
+
             else:
                 print(f"Did not understand that instruction: {ir} at address {self.pc}")
                 sys.exit(1)
