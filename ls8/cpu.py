@@ -168,11 +168,13 @@ class CPU:
         elif op == "CMP":
             register_a = self.reg[reg_a]
             register_b = self.reg[reg_b]
-            if register_a == register_b:
+
+            # 'FL' bits = '00000LGE'
+            if register_a == register_b: # E
                 self.fl = 0b00000001
-            elif register_a > register_b:
+            elif register_a > register_b: # G
                 self.fl = 0b00000010
-            elif register_a < register_b:
+            elif register_a < register_b: # L
                 self.fl = 0b00000100
 
         else:
