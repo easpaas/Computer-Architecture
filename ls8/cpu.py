@@ -105,6 +105,7 @@ class CPU:
     # Sprint Challenge methods
     # *************************************************
 
+    # Jump the address stored in given register
     def jne(self):
         register = self.ram[self.pc + 1]
         if (self.fl & HLT) == 0:
@@ -112,6 +113,7 @@ class CPU:
         else:
             self.pc += 2
 
+    # Equal flag is set to true, jump to address at given register 
     def jeq(self):
         register = self.ram[self.pc + 1]
         if (self.fl & HLT) > 0:
@@ -119,12 +121,14 @@ class CPU:
         else:
             self.pc += 2
 
+    # cmp instruction handled by alu
     def cmp(self):
         register1 = self.ram[self.pc + 1]
         register2 = self.ram[self.pc + 2]
         self.alu("CMP", register1, register2)
         self.pc += 3
 
+    # Jump to address stored in the given register
     def jmp(self):
         register = self.ram[self.pc + 1]
         self.pc = self.reg[register]
